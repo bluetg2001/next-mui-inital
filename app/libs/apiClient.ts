@@ -1,28 +1,40 @@
-// libs/apiClient.ts
 export const apiClient = async ({
   method = "GET",
   path,
   headers = {},
   body = {},
 }: {
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   path: string;
   headers?: any;
   body?: any;
 }) => {
   try {
-    const url = `/api/${path}`; // Next.js API Route 호출
+    const url = `/api/${path}`;
+
+    // ✅ SSR 안전 처리
+    let authToken: string | null = null;
+    if (typeof window !== "undefined") {
+      authToken =
+        localStorage.getItem("authToken") ||
+        sessionStorage.getItem("authToken");
+    }
+
+    const isFormData = body instanceof FormData;
 
     const requestOptions: RequestInit = {
       method,
       headers: {
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+        ...(!isFormData && { "Content-Type": "application/json" }),
         ...headers,
-        "Content-Type": "application/json",
       },
+      credentials: "include",
     };
 
-    if (method !== "GET") {
-      requestOptions.body = JSON.stringify(body);
+    // ✅ GET이나 HEAD가 아닐 때만 body 추가
+    if (method !== "GET" && method !== "HEAD") {
+      requestOptions.body = isFormData ? body : JSON.stringify(body);
     }
 
     const response = await fetch(url, requestOptions);

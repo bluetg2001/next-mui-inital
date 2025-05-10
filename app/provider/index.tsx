@@ -1,11 +1,19 @@
 "use client";
 
-import React from "react";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
-import { Provider } from "jotai";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@mui/material";
-import theme from "../libs/theme";
+
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
+import { CacheProvider } from "@emotion/react";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { Provider } from "jotai";
+import React from "react";
+import { ScrollProvider } from "./ScrollProvider";
+import ThemeRegistry from "./ThemeRegistry";
+import createEmotionCache from "../libs/createEmotionCache";
+import "dayjs/locale/ko";
+
+const emotionCache = createEmotionCache();
 
 function MultiProvider({
   children,
@@ -16,13 +24,20 @@ function MultiProvider({
 
   return (
     <Provider>
-      <AppRouterCacheProvider>
-        <ThemeProvider theme={theme}>
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
-        </ThemeProvider>
-      </AppRouterCacheProvider>
+      <CacheProvider value={emotionCache}>
+        <AppRouterCacheProvider>
+          <ThemeRegistry>
+            <QueryClientProvider client={queryClient}>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="ko"
+              >
+                <ScrollProvider>{children}</ScrollProvider>
+              </LocalizationProvider>
+            </QueryClientProvider>
+          </ThemeRegistry>
+        </AppRouterCacheProvider>
+      </CacheProvider>
     </Provider>
   );
 }
